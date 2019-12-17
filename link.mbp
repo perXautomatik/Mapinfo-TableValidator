@@ -1,0 +1,5 @@
+[Link]
+Application = TableValidator.mbx
+
+Module = TableValidator
+Module = commonLib\commonLib1
