@@ -91,6 +91,7 @@ sub processor_ValidatePathTable
 	
 	DO case G_Progress
 		case 1
+			Pack Table pathTable Data
 			fetch first from pathTable
 		case G_ProgressRange
 			dim failedTables as string
