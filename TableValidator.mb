@@ -1,6 +1,6 @@
 
 include ".\CommonLib\commonLib1.def"
-
+Include "MapBasic.def"
 Declare sub processor_ValidatePathTable 
 Declare function pathTableInvalid() as logical 
 Declare function makeFailures as integer
