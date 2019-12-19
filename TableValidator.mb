@@ -96,12 +96,16 @@ sub processor_ValidatePathTable
 		case G_ProgressRange
 			dim failedTables as string
 			commit table NameNalias
-					
+			print "before delete:" & tableInfo("NameNalias",TAB_INFO_NROWS)					
+			
 			if(selectFailuresFrompathTable() <> 0) then
 				select * from NameNalias where left$(col1,len(col1)-4) = any(select col1 from pathTable) into success
 				delete from success
 			end if
 			Pack Table NameNalias Data
+			
+			print "after delete:" & tableInfo("NameNalias",TAB_INFO_NROWS)					
+
 		case else 
 			call correctPathTable()
 	end case
