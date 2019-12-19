@@ -98,9 +98,10 @@ sub processor_ValidatePathTable
 			commit table NameNalias
 					
 			if(selectFailuresFrompathTable() <> 0) then
-				select * from NameNalias where not(left$(col1,len(col1)-4) = any(select col1 from pathTable)) into success
+				select * from NameNalias where left$(col1,len(col1)-4) = any(select col1 from pathTable) into success
 				delete from success
 			end if
+			Pack Table NameNalias Data
 		case else 
 			call correctPathTable()
 	end case
@@ -156,10 +157,10 @@ function errorsINPathTable() as logical
 	dim tempInteger as integer
 
 	tempInteger	= selectFailuresFrompathTable() 'any integer higher than zero means false
-print tempInteger	
+	print tempInteger	
 	errorsINPathTable = tempInteger
 	onError goto 0
-    end program
+
 exit function
 	noTable:
 		print error$()
