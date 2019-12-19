@@ -38,6 +38,7 @@ sub runValidation()
 	val1 = NameNalias.col1
 	for i=1 to ubound(paths)
   		testPath = paths(i) & val1
+  		print testPath
   		if(ValidateNClosePath(testPath)) then
   			val1 = iif(NameNalias.col2<>"",NameNalias.col2,left$(NameNalias.col1,len(NameNalias.col1)-4))
   			insert into pathTable (tablePath,tableName,static) values (testPath,val1,1)
