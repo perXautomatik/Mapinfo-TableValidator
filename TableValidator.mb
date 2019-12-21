@@ -5,7 +5,7 @@ Declare sub processor_ValidatePathTable
 Declare function errorsINPathTable() as logical 
 Declare function selectFailuresFrompathTable as integer
 Declare sub processor_ValidateTable 
-Declare sub correctPathTable()
+Declare sub rmNonOneAndInvalid()
 Declare sub runValidation()
 Declare sub Main
 Declare sub loadPathArray()
@@ -56,22 +56,11 @@ sub processor_ValidateTable
 		case 2
 			dim tempstring as string tempstring = applicationDirectory$() + "pathTable.tab"
 	
-				if not(ValidateNClosePath(tempstring)) then
-					note "createintg pathTable"
-					CREATE TABLE PathTABLE (tableName Char(40),tablePath Char(256),alternative Char(256),static Integer) File tempstring
-				end if
+			if not(ValidateNClosePath(tempstring)) then note "createintg pathTable" CREATE TABLE PathTABLE (tableName Char(40),tablePath Char(256),alternative Char(256),static Integer) File tempstring end if
 
 			fetch first from NameNalias
 		case G_ProgressRange
-			dim failedTables as string
-			
-			if(selectFailuresFrompathTable() <> 0) then
-				dim failerues() as string
-				
-				call columnAsStringArray("Failures","col1",failerues)
-				failedTables = StringArrayAsString(failerues)
-				goto CouldntOpenEveryTableError
-			end if
+			if(selectFailuresFrompathTable() <> 0) then dim failerues(),failedTables as string call columnAsStringArray("Failures","col1",failerues) failedTables = StringArrayAsString(failerues) goto CouldntOpenEveryTableError end if
 		case else 
 			call runValidation()
 			fetch Next from NameNalias
@@ -94,29 +83,27 @@ sub processor_ValidatePathTable
 			Pack Table pathTable Data
 			fetch first from pathTable
 		case G_ProgressRange
-			dim failedTables as string
+		
 			commit table NameNalias
-			print "before delete:" & tableInfo("NameNalias",TAB_INFO_NROWS)					
 			
-			if(selectFailuresFrompathTable() <> 0) then
-				select * from NameNalias where left$(col1,len(col1)-4) = any(select col1 from pathTable) into success
-				delete from success
-			end if
+			if(selectFailuresFrompathTable() <> 0) then select * from NameNalias where left$(col1,len(col1)-4) = any(select col1 from pathTable) into success delete from success end if
+		
+			Commit table NameNalias
+		
 			Pack Table NameNalias Data
 			
-			print "after delete:" & tableInfo("NameNalias",TAB_INFO_NROWS)					
-
 		case else 
-			call correctPathTable()
+			call rmNonOneAndInvalid()
+			
+			fetch next from pathTable
 	end case
 	call increment(G_Progress,G_ProgressRange,G_starttime)    
 exit sub
 
 end sub
 
-sub correctPathTable()	
-	dim testPath as string		
-	,val1,i as integer
+sub rmNonOneAndInvalid()	
+	dim testPath as string ,val1 as integer
 		
 	val1 = pathTable.col4
 	testPath = pathTable.col2
@@ -131,22 +118,12 @@ sub correctPathTable()
 		end if
 	end if
 	
-	fetch next from pathTable
-
 End Sub
 
 function selectFailuresFrompathTable() as integer
-	select Col1,Col2,col3 from NameNalias 
-		where 
-			not(left$(col1,len(col1)-4) = any(select col1 from pathTable)) 
-			AND col3 = 0 
-			into firstT
-			
-	select col1 from firstT 
-		where 
-			not(col2 = any(select col1 from pathTable)) 
-			and col3 = 0 into failures
-			
+		 
+		select * from NameNalias where not(left$(col1,len(col1)-4) = any(select col1 from pathTable)) into failures
+		
 	selectFailuresFrompathTable = tableInfo("failures",TAB_INFO_NROWS)
 End function
 		
