@@ -1,79 +1,49 @@
 include "CommonLib\commonLib1.def"
 Include "MapBasic.def"
 
-Declare sub processor_ValidatePathTable 
-Declare function errorsINPathTable() as logical 
-Declare function selectFailuresFrompathTable as integer
-Declare sub processor_ValidateTable 
-Declare sub rmNonOneAndInvalid()
-Declare sub runValidation()
-Declare sub Main
-Declare sub loadPathArray()
-
-global 
-	G_senastTid,
-    G_Progress,
-    G_starttime,G_ProgressRange as integer,
-	paths() as string
+Declare sub processor_ValidatePathTable Declare function errorsINPathTable() as logical Declare function selectFailuresFrompathTable as integer Declare sub processor_ValidateTable Declare sub rmNonOneAndInvalid() Declare sub runValidation() Declare sub Main Declare sub loadPathArray()
+global G_senastTid, G_Progress, G_starttime,G_ProgressRange as integer, paths() as string
 
 Sub Main
 
-    G_senastTid = 0
-    G_Progress = 0
-    G_starttime = timer()
-
-	if(errorsINPathTable()) then		
-		G_ProgressRange =  tableInfo("NameNalias",TAB_INFO_NROWS)+3
-		
-		ProgressBar "processor_ValidateTable...." & G_ProgressRange & " items" Calling processor_ValidateTable	Range G_ProgressRange 	
-	'	print Chr$(12) 'emptyScreen
-		commit table PathTable
-	end if	
+    G_senastTid = 0 G_Progress = 0 G_starttime = timer() print "before" if(errorsINPathTable()) then 
 	
+		G_ProgressRange =  tableInfo("NameNalias",TAB_INFO_NROWS)+3 print "inside"	& G_ProgressRange G_senastTid = 0 G_Progress = 0 G_starttime = timer() ProgressBar "processor_ValidateTable...." & G_ProgressRange & " items" 
+		Calling processor_ValidateTable	Range G_ProgressRange commit table PathTable 
+	end if	
+	print "done validation"
+
 end sub
 
-sub runValidation()	
-	dim val1,testPath as string ,i as integer
-		
-	val1 = NameNalias.col1
-	for i=1 to ubound(paths)
-  		testPath = paths(i) & val1
-  		if(ValidateNClosePath(testPath)) then
-  			val1 = iif(NameNalias.col2<>"",NameNalias.col2,left$(NameNalias.col1,len(NameNalias.col1)-4))
-  			insert into pathTable (tablePath,tableName,static) values (testPath,val1,1)
-  			goto found
-  		end if
-	next	
-	found:
-
-End Sub
+sub runValidation() dim val1,testPath as string ,i as integer val1 = NameNalias.col1 for i=1 to ubound(paths) testPath = paths(i) & val1 if(ValidateNClosePath(testPath)) then val1 = iif(NameNalias.col2<>"",NameNalias.col2,left$(NameNalias.col1,len(NameNalias.col1)-4)) insert into pathTable (tablePath,tableName,static) values (testPath,val1,1) print "found" goto found end if next print "not found" exit sub found: End Sub
 
 sub processor_ValidateTable
 	
-	DO case G_Progress
-		case 1
-			call loadPathArray()
-		case 2
-			dim tempstring as string tempstring = applicationDirectory$() + "pathTable.tab"
-	
-			if not(ValidateNClosePath(tempstring)) then note "createintg pathTable" CREATE TABLE PathTABLE (tableName Char(40),tablePath Char(256),alternative Char(256),static Integer) File tempstring end if
-
-			fetch first from NameNalias
+	DO case G_Progress 
+	case 1 call loadPathArray()
+	print Chr$(12) 'emptyScreen 
+	case 2 dim tempstring as string tempstring = applicationDirectory$() + "pathTable.tab" onError goto tabex if not(ValidateNClosePath(tempstring)) then note "createintg pathTable" CREATE TABLE PathTABLE (tableName Char(40),tablePath Char(256),alternative Char(256),static Integer) File tempstring end if onError goto 0 print 2 fetch first from NameNalias
+		
 		case G_ProgressRange
-			if(selectFailuresFrompathTable() <> 0) then dim failerues(),failedTables as string call columnAsStringArray("Failures","col1",failerues) failedTables = StringArrayAsString(failerues) goto CouldntOpenEveryTableError end if
+		print "end"
+			if(selectFailuresFrompathTable() <> 0) then
+			 dim failerues(),failedTables as string call columnAsStringArray("Failures","col1",failerues) failedTables = StringArrayAsString(failerues) goto CouldntOpenEveryTableError end if
 		case else 
+		print G_Progress
 			call runValidation()
 			fetch Next from NameNalias
 	end case
 	call increment(G_Progress,G_ProgressRange,G_starttime)
 
-    
 exit sub
 
 	CouldntOpenEveryTableError:
 		note "CouldntOpenEveryTableERROR " & failedTables
 		end program
-
+	
+	tabex:
+		print error$()
+		resume next
 end sub
 
 sub processor_ValidatePathTable
