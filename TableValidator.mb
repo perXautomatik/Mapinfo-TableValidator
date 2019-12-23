@@ -15,7 +15,14 @@ Sub Main
 
 end sub
 
-sub runValidation() dim val1,testPath as string ,i as integer val1 = NameNalias.col1 for i=1 to ubound(paths) testPath = paths(i) & val1 if(ValidateNClosePath(testPath)) then val1 = iif(NameNalias.col2<>"",NameNalias.col2,left$(NameNalias.col1,len(NameNalias.col1)-4)) insert into pathTable (tablePath,tableName,static) values (testPath,val1,1) print "found" goto found end if next print "not found" exit sub found: End Sub
+sub runValidation() dim val1, testPath as string, i as integer val1 = NameNalias.fileName
+for i = 1 to ubound(paths) testPath = paths(i) & val1
+if (ValidateNClosePath(testPath)) then 
+val1 = iif(NameNalias.Alias < > "", NameNalias.Alias, left$(NameNalias.fileName, len(NameNalias.fileName) - 4))
+insert into pathTable(tablePath, tableName, static) values(testPath, val1, 1) print "found"
+goto found end
+if next print "not found"
+exit sub found: End Sub
 
 sub processor_ValidateTable
 	
@@ -26,6 +33,7 @@ sub processor_ValidateTable
 		
 		case G_ProgressRange
 		print "end"
+			commit table pathTable
 			if(selectFailuresFrompathTable() <> 0) then
 			 dim failerues(),failedTables as string call columnAsStringArray("Failures","col1",failerues) failedTables = StringArrayAsString(failerues) goto CouldntOpenEveryTableError end if
 		case else 
@@ -92,8 +100,9 @@ End Sub
 
 function selectFailuresFrompathTable() as integer
 		 
-		select * from NameNalias where not(left$(col1,len(col1)-4) = any(select col1 from pathTable)) into failures
-		
+		select * from NameNalias where not(left$(col1,len(col1)-4) = any(select col1 from pathTable)) into faileNames
+		select * from faileNames where not(col2 = any(select col1 from pathTable)) into failures
+
 	selectFailuresFrompathTable = tableInfo("failures",TAB_INFO_NROWS)
 End function
 		
@@ -116,8 +125,6 @@ exit function
 		print error$()
 		errorsINPathTable = true
 end function
-
-
 
 sub loadPathArray()
 	open Table applicationdirectory$() & "NameNalias.TAB" select left$(Col1,len(Col1)-2),Col2 from PathsPriorityOrder where right$(col1,1) = "*" order by col2 into PrefixPaths
