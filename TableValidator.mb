@@ -1,19 +1,42 @@
 include "CommonLib\commonLib1.def"
 Include "MapBasic.def"
 
-Declare sub 1processor_ValidatePathTable Declare function Do1_errorsINPathTable() as logical Declare function do1_selectFailuresFrompathTable as integer Declare sub 2 Declare sub do1_rmNonOneAndInvalid() Declare sub Do2_runValidation() Declare sub Main Declare sub do2_loadPathArray()
+Declare sub processor1_ValidatePathTable Declare function Do1_errorsINPathTable() as logical Declare function do1_selectFailuresFrompathTable as integer Declare sub processor2_ValidateTable Declare sub do1_rmNonOneAndInvalid() Declare sub Do2_runValidation() Declare sub Main Declare sub do2_loadPathArray()
 global G_senastTid, G_Progress, G_starttime,G_ProgressRange as integer, paths() as string
 
 Sub Main
 
-    G_senastTid = 0 G_Progress = 0 G_starttime = timer() print "before" if(Do1_errorsINPathTable()) then 
-	
+    G_senastTid = 0 G_Progress = 0 G_starttime = timer() print "before"
+	dim Do1_errorsINPathTable as logical
+		,tempInteger as integer
+		onError goto NoTable
+			open table applicationdirectory$()+ "pathTable.tab"
+			
+			G_ProgressRange =  tableInfo("pathTable",TAB_INFO_NROWS)+2
+			ProgressBar "1processor_ValidatePathTable...." & G_ProgressRange & " items" Calling processor1_ValidatePathTable	Range G_ProgressRange 	
+			
+			tempInteger	= do1_selectFailuresFrompathTable() 'any integer higher than zero means trur
+			print "X" & tempInteger	
+			Do1_errorsINPathTable = (0 <> tempInteger)
+		onError goto 0
+
+	end program
+
+	 if(Do1_errorsINPathTable) then 
 		G_ProgressRange =  tableInfo("NameNalias",TAB_INFO_NROWS)+3 print "inside"	& G_ProgressRange G_senastTid = 0 G_Progress = 0 G_starttime = timer() ProgressBar "2...." & G_ProgressRange & " items" 
-		Calling 2	Range G_ProgressRange commit table PathTable 
+		Calling processor2_ValidateTable	Range G_ProgressRange commit table PathTable 
 	end if	
 	print "done validation"
 
+exit sub
+	noTable:
+		print error$()
+		Do1_errorsINPathTable = true
 end sub
+
+function Do1_errorsINPathTable() as logical
+
+end function
 
 sub processor1_ValidatePathTable
 	
@@ -67,25 +90,7 @@ function do1_selectFailuresFrompathTable() as integer
 	do1_selectFailuresFrompathTable = tableInfo("failures",TAB_INFO_NROWS)
 End function
 		
-function Do1_errorsINPathTable() as logical
-	onError goto NoTable
-	open table applicationdirectory$()+ "pathTable.tab"
-	
-	G_ProgressRange =  tableInfo("pathTable",TAB_INFO_NROWS)+2
-	ProgressBar "1processor_ValidatePathTable...." & G_ProgressRange & " items" Calling 1processor_ValidatePathTable	Range G_ProgressRange 	
-	
-	dim tempInteger as integer
 
-	tempInteger	= do1_selectFailuresFrompathTable() 'any integer higher than zero means trur
-	print "X" & tempInteger	
-	Do1_errorsINPathTable = (0 <> tempInteger)
-	onError goto 0
-
-exit function
-	noTable:
-		print error$()
-		Do1_errorsINPathTable = true
-end function
 
 sub do2_loadPathArray()
 	open Table applicationdirectory$() & "NameNalias.TAB" select left$(Col1,len(Col1)-2),Col2 from PathsPriorityOrder where right$(col1,1) = "*" order by col2 into PrefixPaths
