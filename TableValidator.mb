@@ -1,59 +1,21 @@
 include "CommonLib\commonLib1.def"
 Include "MapBasic.def"
 
-Declare sub processor_ValidatePathTable Declare function errorsINPathTable() as logical Declare function selectFailuresFrompathTable as integer Declare sub processor_ValidateTable Declare sub rmNonOneAndInvalid() Declare sub Do1_runValidation() Declare sub Main Declare sub loadPathArray()
+Declare sub 1processor_ValidatePathTable Declare function Do1_errorsINPathTable() as logical Declare function do1_selectFailuresFrompathTable as integer Declare sub 2 Declare sub do1_rmNonOneAndInvalid() Declare sub Do2_runValidation() Declare sub Main Declare sub do2_loadPathArray()
 global G_senastTid, G_Progress, G_starttime,G_ProgressRange as integer, paths() as string
 
 Sub Main
 
-    G_senastTid = 0 G_Progress = 0 G_starttime = timer() print "before" if(errorsINPathTable()) then 
+    G_senastTid = 0 G_Progress = 0 G_starttime = timer() print "before" if(Do1_errorsINPathTable()) then 
 	
-		G_ProgressRange =  tableInfo("NameNalias",TAB_INFO_NROWS)+3 print "inside"	& G_ProgressRange G_senastTid = 0 G_Progress = 0 G_starttime = timer() ProgressBar "processor_ValidateTable...." & G_ProgressRange & " items" 
-		Calling processor_ValidateTable	Range G_ProgressRange commit table PathTable 
+		G_ProgressRange =  tableInfo("NameNalias",TAB_INFO_NROWS)+3 print "inside"	& G_ProgressRange G_senastTid = 0 G_Progress = 0 G_starttime = timer() ProgressBar "2...." & G_ProgressRange & " items" 
+		Calling 2	Range G_ProgressRange commit table PathTable 
 	end if	
 	print "done validation"
 
 end sub
 
-sub processor_ValidateTable
-	
-	DO case G_Progress 
-	case 1 call loadPathArray()
-	print Chr$(12) 'emptyScreen 
-	case 2 dim tempstring as string tempstring = applicationDirectory$() + "pathTable.tab" onError goto tabex if not(ValidateNClosePath(tempstring)) then note "createintg pathTable" CREATE TABLE PathTABLE (tableName Char(40),tablePath Char(256),alternative Char(256),static Integer) File tempstring end if onError goto 0 print 2 fetch first from NameNalias
-		
-		case G_ProgressRange
-		print "end"
-			commit table pathTable
-			if(selectFailuresFrompathTable() <> 0) then
-			 dim failerues(),failedTables as string call columnAsStringArray("Failures","col1",failerues) failedTables = StringArrayAsString(failerues) goto CouldntOpenEveryTableError end if
-		case else 
-		print G_Progress
-			call Do1_runValidation()
-			fetch Next from NameNalias
-	end case
-	call increment(G_Progress,G_ProgressRange,G_starttime)
-
-exit sub
-
-	CouldntOpenEveryTableError:
-		note "CouldntOpenEveryTableERROR " & failedTables
-		end program
-	
-	tabex:
-		print error$()
-		resume next
-end sub
-
-sub Do1_runValidation() dim val1, testPath as string, i as integer val1 = NameNalias.fileName
-	for i = 1 to ubound(paths) testPath = paths(i) & val1
-		if (ValidateNClosePath(testPath)) then 
-			val1 = iif(NameNalias.Alias <> "", NameNalias.Alias, left$(NameNalias.fileName, len(NameNalias.fileName) - 4))
-			insert into pathTable(tablePath, tableName, static) values(testPath, val1, 1) print "found"
-		goto found end
-	if next print "not found"
-exit sub found: End Sub
-sub processor_ValidatePathTable
+sub processor1_ValidatePathTable
 	
 	DO case G_Progress
 		case 1
@@ -63,14 +25,14 @@ sub processor_ValidatePathTable
 		
 			commit table NameNalias
 			
-			if(selectFailuresFrompathTable() <> 0) then select * from NameNalias where left$(col1,len(col1)-4) = any(select col1 from pathTable) into success delete from success end if
+			if(do1_selectFailuresFrompathTable() <> 0) then select * from NameNalias where left$(col1,len(col1)-4) = any(select col1 from pathTable) into success delete from success end if
 		
 			Commit table NameNalias
 		
 			Pack Table NameNalias Data
 			
 		case else 
-			call rmNonOneAndInvalid()
+			call do1_rmNonOneAndInvalid()
 			
 			fetch next from pathTable
 	end case
@@ -79,7 +41,7 @@ exit sub
 
 end sub
 
-sub rmNonOneAndInvalid()	
+sub do1_rmNonOneAndInvalid()	
 	dim testPath as string ,val1 as integer
 		
 	val1 = pathTable.col4
@@ -97,35 +59,35 @@ sub rmNonOneAndInvalid()
 	
 End Sub
 
-function selectFailuresFrompathTable() as integer
+function do1_selectFailuresFrompathTable() as integer
 		 
 		select * from NameNalias where not(left$(col1,len(col1)-4) = any(select col1 from pathTable)) into faileNames
 		select * from faileNames where not(col2 = any(select col1 from pathTable)) into failures
 
-	selectFailuresFrompathTable = tableInfo("failures",TAB_INFO_NROWS)
+	do1_selectFailuresFrompathTable = tableInfo("failures",TAB_INFO_NROWS)
 End function
 		
-function errorsINPathTable() as logical
+function Do1_errorsINPathTable() as logical
 	onError goto NoTable
 	open table applicationdirectory$()+ "pathTable.tab"
 	
 	G_ProgressRange =  tableInfo("pathTable",TAB_INFO_NROWS)+2
-	ProgressBar "processor_ValidatePathTable...." & G_ProgressRange & " items" Calling processor_ValidatePathTable	Range G_ProgressRange 	
+	ProgressBar "1processor_ValidatePathTable...." & G_ProgressRange & " items" Calling 1processor_ValidatePathTable	Range G_ProgressRange 	
 	
 	dim tempInteger as integer
 
-	tempInteger	= selectFailuresFrompathTable() 'any integer higher than zero means trur
+	tempInteger	= do1_selectFailuresFrompathTable() 'any integer higher than zero means trur
 	print "X" & tempInteger	
-	errorsINPathTable = (0 <> tempInteger)
+	Do1_errorsINPathTable = (0 <> tempInteger)
 	onError goto 0
 
 exit function
 	noTable:
 		print error$()
-		errorsINPathTable = true
+		Do1_errorsINPathTable = true
 end function
 
-sub loadPathArray()
+sub do2_loadPathArray()
 	open Table applicationdirectory$() & "NameNalias.TAB" select left$(Col1,len(Col1)-2),Col2 from PathsPriorityOrder where right$(col1,1) = "*" order by col2 into PrefixPaths
 	open Table applicationdirectory$() & "PathsPriorityOrder.TAB" select right$(Col1,len(Col1)-1),Col2 from PathsPriorityOrder where left$(col1,1) = "*" order by col2 into PostfixPaths
 	
@@ -146,3 +108,45 @@ sub loadPathArray()
 	 loop
 	
 End Sub
+
+sub Do2_runValidation() dim val1, testPath as string, i as integer val1 = NameNalias.fileName
+	for i = 1 to ubound(paths) testPath = paths(i) & val1
+		if (ValidateNClosePath(testPath)) then 
+			val1 = iif(NameNalias.Alias <> "", NameNalias.Alias, left$(NameNalias.fileName, len(NameNalias.fileName) - 4))
+			insert into pathTable(tablePath, tableName, static) values(testPath, val1, 1) print "found"
+		goto found end
+	if next print "not found"
+exit sub found: 
+End Sub
+
+
+
+sub processor2_ValidateTable
+	
+	DO case G_Progress 
+	case 1 call do2_loadPathArray()
+	print Chr$(12) 'emptyScreen 
+	case 2 dim tempstring as string tempstring = applicationDirectory$() + "pathTable.tab" onError goto tabex if not(ValidateNClosePath(tempstring)) then note "createintg pathTable" CREATE TABLE PathTABLE (tableName Char(40),tablePath Char(256),alternative Char(256),static Integer) File tempstring end if onError goto 0 print 2 fetch first from NameNalias
+		
+		case G_ProgressRange
+		print "end"
+			commit table pathTable
+			if(do1_selectFailuresFrompathTable() <> 0) then
+			 dim failerues(),failedTables as string call columnAsStringArray("Failures","col1",failerues) failedTables = StringArrayAsString(failerues) goto CouldntOpenEveryTableError end if
+		case else 
+		print G_Progress
+			call Do2_runValidation()
+			fetch Next from NameNalias
+	end case
+	call increment(G_Progress,G_ProgressRange,G_starttime)
+
+exit sub
+
+	CouldntOpenEveryTableError:
+		note "CouldntOpenEveryTableERROR " & failedTables
+		end program
+	
+	tabex:
+		print error$()
+		resume next
+end sub
