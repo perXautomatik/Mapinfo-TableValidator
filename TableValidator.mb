@@ -1,7 +1,7 @@
 include "CommonLib\commonLib1.def"
 Include "MapBasic.def"
 
-Declare sub processor_ValidatePathTable Declare function errorsINPathTable() as logical Declare function selectFailuresFrompathTable as integer Declare sub processor_ValidateTable Declare sub rmNonOneAndInvalid() Declare sub runValidation() Declare sub Main Declare sub loadPathArray()
+Declare sub processor_ValidatePathTable Declare function errorsINPathTable() as logical Declare function selectFailuresFrompathTable as integer Declare sub processor_ValidateTable Declare sub rmNonOneAndInvalid() Declare sub Do1_runValidation() Declare sub Main Declare sub loadPathArray()
 global G_senastTid, G_Progress, G_starttime,G_ProgressRange as integer, paths() as string
 
 Sub Main
@@ -14,15 +14,6 @@ Sub Main
 	print "done validation"
 
 end sub
-
-sub runValidation() dim val1, testPath as string, i as integer val1 = NameNalias.fileName
-for i = 1 to ubound(paths) testPath = paths(i) & val1
-if (ValidateNClosePath(testPath)) then 
-val1 = iif(NameNalias.Alias < > "", NameNalias.Alias, left$(NameNalias.fileName, len(NameNalias.fileName) - 4))
-insert into pathTable(tablePath, tableName, static) values(testPath, val1, 1) print "found"
-goto found end
-if next print "not found"
-exit sub found: End Sub
 
 sub processor_ValidateTable
 	
@@ -38,7 +29,7 @@ sub processor_ValidateTable
 			 dim failerues(),failedTables as string call columnAsStringArray("Failures","col1",failerues) failedTables = StringArrayAsString(failerues) goto CouldntOpenEveryTableError end if
 		case else 
 		print G_Progress
-			call runValidation()
+			call Do1_runValidation()
 			fetch Next from NameNalias
 	end case
 	call increment(G_Progress,G_ProgressRange,G_starttime)
@@ -54,6 +45,14 @@ exit sub
 		resume next
 end sub
 
+sub Do1_runValidation() dim val1, testPath as string, i as integer val1 = NameNalias.fileName
+	for i = 1 to ubound(paths) testPath = paths(i) & val1
+		if (ValidateNClosePath(testPath)) then 
+			val1 = iif(NameNalias.Alias <> "", NameNalias.Alias, left$(NameNalias.fileName, len(NameNalias.fileName) - 4))
+			insert into pathTable(tablePath, tableName, static) values(testPath, val1, 1) print "found"
+		goto found end
+	if next print "not found"
+exit sub found: End Sub
 sub processor_ValidatePathTable
 	
 	DO case G_Progress
