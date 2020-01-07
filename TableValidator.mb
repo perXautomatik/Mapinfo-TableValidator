@@ -27,7 +27,7 @@ Sub Main
 		Calling processor2_ValidateTable	Range G_ProgressRange commit table PathTable 
 	end if	
 	print "done validation"
-
+	commit table pathTable
 exit sub
 	noTable:
 		print error$()
@@ -48,7 +48,9 @@ sub processor1_ValidatePathTable
 		
 			commit table NameNalias
 			
-			if(do1_selectFailuresFrompathTable() <> 0) then select * from NameNalias where left$(col1,len(col1)-4) = any(select col1 from pathTable) into success delete from success end if
+			dim tempstring as integer
+			tempstring = do1_selectFailuresFrompathTable()
+			if(do1_selectFailuresFrompathTable() <> 0) then select * from NameNalias where not(fileName = any(select fileName from failures)) into success delete from success end if
 		
 			Commit table NameNalias
 		
@@ -86,8 +88,8 @@ function do1_selectFailuresFrompathTable() as integer
 		 
 		select * from NameNalias where not(left$(col1,len(col1)-4) = any(select col1 from pathTable)) into faileNames
 		select * from faileNames where not(col2 = any(select col1 from pathTable)) into failures
-
-	do1_selectFailuresFrompathTable = tableInfo("failures",TAB_INFO_NROWS)
+		select * from failures where not(NonMandatory) into final
+	do1_selectFailuresFrompathTable = tableInfo("final",TAB_INFO_NROWS)
 End function
 		
 
